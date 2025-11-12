@@ -1,0 +1,46 @@
+server:
+  port: 8081
+  servlet:
+    context-path: /api  # endpoints start with /api/...
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres?currentSchema=ecommerce
+    username: postgres
+    password: 123456
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none       # we manage tables manually
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: ecommerce
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 12MB
+
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+# swagger
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+
+logging:
+  level:
+    root: INFO
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
