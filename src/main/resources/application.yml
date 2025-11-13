@@ -4,6 +4,7 @@ server:
     context-path: /api  # endpoints start with /api/...
 
 spring:
+
   datasource:
     url: jdbc:postgresql://localhost:5432/postgres?currentSchema=ecommerce
     username: postgres
@@ -29,6 +30,9 @@ spring:
     pathmatch:
       matching-strategy: ant_path_matcher
 
+  profiles:
+    active: dev   # 👈 change to 'prod' when deploying
+
 # swagger
 springdoc:
   api-docs:
@@ -37,6 +41,11 @@ springdoc:
   swagger-ui:
     enabled: true
     path: /swagger-ui.html
+
+jwt:
+  secret: "ReplaceThisWithYourOwnVeryLongSecretKeyForSecurity"
+  expiration: 3600000   # 1 hour in ms
+
 
 logging:
   level:
