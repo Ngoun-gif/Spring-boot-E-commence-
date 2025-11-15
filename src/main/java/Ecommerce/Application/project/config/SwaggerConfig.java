@@ -1,8 +1,7 @@
 package Ecommerce.Application.project.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.info.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -10,14 +9,11 @@ import org.springframework.context.annotation.Configuration;
 public class SwaggerConfig {
 
     @Bean
-    public OpenAPI customOpenAPI() {
+    public OpenAPI apiInfo() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("E-Commerce API")
-                        .version("1.0")
-                        .description("REST API documentation for your E-Commerce backend")
-                        .license(new License()
-                                .name("Apache 2.0")
-                                .url("http://springdoc.org")));
+                        .title("Ecommerce API")
+                        .version("1.0.0")
+                        .description("Documentation for Ecommerce API"));
     }
 }

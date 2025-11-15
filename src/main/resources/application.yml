@@ -43,8 +43,8 @@ springdoc:
     path: /swagger-ui.html
 
 jwt:
-  secret: "ReplaceThisWithYourOwnVeryLongSecretKeyForSecurity"
-  expiration: 3600000   # 1 hour in ms
+  secret: "u8Kd9sFJ3lP9q2Qz7W3Ny9Ypw1BzXUe0IFhXPLnKEHQ="
+  expiration: 86400000   # 1 hour in ms
 
 
 logging:
