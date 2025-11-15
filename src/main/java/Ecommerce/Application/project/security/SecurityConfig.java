@@ -42,12 +42,25 @@ public class SecurityConfig {
 
                         // Let Swagger READ users endpoints (only GET)
                         .requestMatchers(HttpMethod.GET, "/users/**").permitAll()
-
                         // Real protected users API
                         .requestMatchers("/users/**").authenticated()
-
                         // Roles API requires ADMIN
                         .requestMatchers("/roles/**").hasAuthority("ADMIN")
+                        // Public read
+                        .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
+                        // Admin only for create/update/delete
+                        .requestMatchers(HttpMethod.POST, "/categories/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/categories/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/categories/**").hasAuthority("ADMIN")
+
+                        // Public read
+                        .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
+                        // Admin only for create/update/delete
+                        .requestMatchers(HttpMethod.POST, "/products/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/products/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/products/**").hasAuthority("ADMIN")
+
+
 
                         // All other requests require JWT
                         .anyRequest().authenticated()
