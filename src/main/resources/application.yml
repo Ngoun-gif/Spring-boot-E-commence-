@@ -36,8 +36,12 @@ spring:
 # swagger
 springdoc:
   api-docs:
+    use-fqn: true
+    writer-with-default-pretty-printer: true
+    default-produces-media-type: application/json
     enabled: true
     path: /v3/api-docs
+    resolve-schema-properties: false
   swagger-ui:
     enabled: true
     path: /swagger-ui.html

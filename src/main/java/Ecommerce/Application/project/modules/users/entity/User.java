@@ -40,7 +40,7 @@ public class User {
     @Column(name = "created_at")
     private Instant createdAt = Instant.now();
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "role_user",
             schema = "ecommerce",
@@ -48,4 +48,5 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
+
 }
