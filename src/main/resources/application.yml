@@ -50,6 +50,11 @@ jwt:
   secret: "u8Kd9sFJ3lP9q2Qz7W3Ny9Ypw1BzXUe0IFhXPLnKEHQ="
   expiration: 86400000   # 1 hour in ms
 
+telegram:
+  bot-token: 8148103194:AAHpqRvhuSoZT_-yMv9cf0M8wdKiN-xfWAU
+  chat-id: 977621214
+
+
 
 logging:
   level:
