@@ -4,6 +4,9 @@ import Ecommerce.Application.project.modules.cart.dto.*;
 import Ecommerce.Application.project.modules.cart.entity.*;
 import Ecommerce.Application.project.modules.cart.repository.*;
 import Ecommerce.Application.project.modules.products.ProductRepository;
+import Ecommerce.Application.project.modules.products.entity.Product;
+import Ecommerce.Application.project.modules.stock.StockRepository;
+import Ecommerce.Application.project.modules.stock.entity.Stock;
 import Ecommerce.Application.project.modules.users.UserRepository;
 import Ecommerce.Application.project.modules.users.entity.User;
 import jakarta.transaction.Transactional;
@@ -22,6 +25,7 @@ public class CartService {
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final StockRepository stockRepository;
 
     // -----------------------------------------------------
     // FIND or CREATE cart
@@ -44,39 +48,50 @@ public class CartService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        var product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product not found"));
-
         Cart cart = getOrCreateCart(user);
 
-        // Check if product already exists in cart
-        CartItem existingItem = cart.getItems().stream()
-                .filter(i -> i.getProduct().getId().equals(product.getId()))
-                .findFirst()
-                .orElse(null);
+        Product product = productRepository.findById(request.getProductId())
+                .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        if (existingItem != null) {
-            existingItem.setQuantity(existingItem.getQuantity() + request.getQuantity());
-            existingItem.setTotal(existingItem.getPrice()
-                    .multiply(BigDecimal.valueOf(existingItem.getQuantity())));
-            cartItemRepository.save(existingItem);
-        } else {
-            CartItem newItem = new CartItem();
-            newItem.setCart(cart);
-            newItem.setProduct(product);
-            newItem.setQuantity(request.getQuantity());
-            newItem.setPrice(product.getPrice());
-            newItem.setTotal(product.getPrice()
-                    .multiply(BigDecimal.valueOf(request.getQuantity())));
+        // Check stock
+        Stock stock = stockRepository.findByProduct(product)
+                .orElseThrow(() -> new RuntimeException("Stock not found"));
 
-            cart.getItems().add(newItem);
-            cartItemRepository.save(newItem);
+        if (stock.getQuantity() < request.getQuantity()) {
+            throw new RuntimeException("Only " + stock.getQuantity() + " left in stock");
         }
 
+        // Check if item already in cart
+        CartItem item = cartItemRepository.findByCartAndProduct(cart, product).orElse(null);
+
+        if (item == null) {
+            item = CartItem.builder()
+                    .cart(cart)
+                    .product(product)
+                    .price(product.getPrice())
+                    .quantity(request.getQuantity())
+                    .total(product.getPrice().multiply(
+                            BigDecimal.valueOf(request.getQuantity())
+                    ))
+                    .build();
+
+            cart.getItems().add(item);
+        } else {
+            int newQty = item.getQuantity() + request.getQuantity();
+            if (newQty > stock.getQuantity()) {
+                throw new RuntimeException("Not enough stock");
+            }
+
+            item.setQuantity(newQty);
+            item.setTotal(item.getPrice().multiply(BigDecimal.valueOf(newQty)));
+        }
+
+        cartItemRepository.save(item);
         updateCartTotal(cart);
 
         return toResponse(cart);
     }
+
 
     // -----------------------------------------------------
     // UPDATE ITEM QUANTITY
