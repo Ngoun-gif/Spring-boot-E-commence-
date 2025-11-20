@@ -39,8 +39,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (header != null && header.startsWith("Bearer ")) {
             token = header.substring(7);
 
+            // 🔥 Validate ONLY access tokens
             if (jwtUtils.validate(token)) {
-                username = jwtUtils.getUsernameFromToken(token);
+                username = jwtUtils.extractUsername(token);
             }
         }
 
@@ -58,7 +59,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authToken);
 
-            // 🔥 ADD THIS → makes @RequestAttribute("email") work
+            // Useful for controllers
             request.setAttribute("email", username);
         }
 

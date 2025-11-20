@@ -7,7 +7,7 @@ import Ecommerce.Application.project.modules.order.dto.*;
 import Ecommerce.Application.project.modules.order.entity.*;
 import Ecommerce.Application.project.modules.order.repository.OrderItemRepository;
 import Ecommerce.Application.project.modules.order.repository.OrderRepository;
-import Ecommerce.Application.project.modules.stock.StockRepository;
+import Ecommerce.Application.project.modules.stock.repository.StockRepository;
 import Ecommerce.Application.project.modules.stock.entity.Stock;
 import Ecommerce.Application.project.modules.users.UserRepository;
 import Ecommerce.Application.project.modules.users.entity.User;

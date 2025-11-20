@@ -10,6 +10,5 @@ public class ProductReq {
     private String description;
     private Long categoryId; // FK
     private String image;
-    private Double rating;
-    private Integer ratingCount;
+
 }

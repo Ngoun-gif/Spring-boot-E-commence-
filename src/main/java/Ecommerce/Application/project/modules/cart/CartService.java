@@ -5,7 +5,7 @@ import Ecommerce.Application.project.modules.cart.entity.*;
 import Ecommerce.Application.project.modules.cart.repository.*;
 import Ecommerce.Application.project.modules.products.ProductRepository;
 import Ecommerce.Application.project.modules.products.entity.Product;
-import Ecommerce.Application.project.modules.stock.StockRepository;
+import Ecommerce.Application.project.modules.stock.repository.StockRepository;
 import Ecommerce.Application.project.modules.stock.entity.Stock;
 import Ecommerce.Application.project.modules.users.UserRepository;
 import Ecommerce.Application.project.modules.users.entity.User;
@@ -196,17 +196,29 @@ public class CartService {
                 .cartId(cart.getId())
                 .totalPrice(cart.getTotalPrice())
                 .items(
-                        cart.getItems().stream()
-                                .map(item -> CartItemResponse.builder()
-                                        .id(item.getId())
-                                        .productId(item.getProduct().getId())
-                                        .quantity(item.getQuantity())
-                                        .price(item.getPrice())
-                                        .total(item.getTotal())
-                                        .build()
-                                ).toList()
+                        cart.getItems().stream().map(item -> {
+
+                            // Get live stock for this product
+                            Stock stock = stockRepository.findByProduct(item.getProduct())
+                                    .orElse(null);
+
+                            boolean isOut = stock == null || stock.getQuantity() < item.getQuantity();
+                            int available = stock != null ? stock.getQuantity() : 0;
+
+                            return CartItemResponse.builder()
+                                    .id(item.getId())
+                                    .productId(item.getProduct().getId())
+                                    .quantity(item.getQuantity())
+                                    .price(item.getPrice())
+                                    .total(item.getTotal())
+                                    .outOfStock(isOut)
+                                    .availableStock(available)
+                                    .build();
+
+                        }).toList()
                 )
                 .build();
     }
+
 
 }

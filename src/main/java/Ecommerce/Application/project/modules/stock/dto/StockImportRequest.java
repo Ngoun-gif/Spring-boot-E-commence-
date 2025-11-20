@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter @Setter
-public class ProductImportRequest {
+public class StockImportRequest {
     private Long productId;
     private int quantity;
     private String remark;

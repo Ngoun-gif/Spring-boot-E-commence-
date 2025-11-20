@@ -3,19 +3,16 @@ package Ecommerce.Application.project.modules.users.dto;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Set;
-
 @Getter
 @Setter
 public class UserReq {
     private String email;
     private String username;
-    private String password;
     private String firstname;
     private String lastname;
     private String phone;
-    private boolean active = true;
+    private String password;
+    private boolean active;
 
-    // roles by name, e.g. ["ADMIN", "CUSTOMER"]
-    private Set<String> roles;
+    private String role;   // ✔ ADMIN chooses role
 }

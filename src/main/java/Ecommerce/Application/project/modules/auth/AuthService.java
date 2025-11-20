@@ -74,10 +74,31 @@ public class AuthService {
             throw new RuntimeException("Invalid email or password");
         }
 
-        String token = jwtUtils.generateToken(user.getEmail());
+        String access = jwtUtils.generateAccessToken(user.getEmail());
+        String refresh = jwtUtils.generateRefreshToken(user.getEmail());
 
-        return new AuthResponse(token, toUserRes(user));
+        return new AuthResponse(access, refresh, toUserRes(user));
     }
+
+    public AuthResponse refresh(RefreshTokenRequest req) {
+
+        if (!jwtUtils.validate(req.getRefreshToken())) {
+            throw new RuntimeException("Invalid refresh token!");
+        }
+
+        String email = jwtUtils.extractUsername(req.getRefreshToken());
+
+        User user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Generate new pair
+        String newAccess = jwtUtils.generateAccessToken(email);
+        String newRefresh = jwtUtils.generateRefreshToken(email);
+
+        return new AuthResponse(newAccess, newRefresh, toUserRes(user));
+    }
+
+
 
     // ---------------------------------------------------------
     // Mapper to UserRes

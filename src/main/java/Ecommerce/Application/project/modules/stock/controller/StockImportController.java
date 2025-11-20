@@ -1,20 +1,29 @@
 package Ecommerce.Application.project.modules.stock.controller;
 
-import Ecommerce.Application.project.modules.stock.dto.ProductImportRequest;
-import Ecommerce.Application.project.modules.stock.entity.ProductImport;
-import Ecommerce.Application.project.modules.stock.service.ProductImportService;
+import Ecommerce.Application.project.modules.stock.dto.StockImportRequest;
+import Ecommerce.Application.project.modules.stock.entity.StockImport;
+import Ecommerce.Application.project.modules.stock.service.StockImportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/product-import")
+@RequestMapping("/stock")
 @RequiredArgsConstructor
-public class ProductImportController {
+public class StockImportController {
 
-    private final ProductImportService importService;
+    private final StockImportService importService;
 
-    @PostMapping
-    public ProductImport importProduct(@RequestBody ProductImportRequest req) {
+    // Import stock
+    @PostMapping("/import")
+    public StockImport importStock(@RequestBody StockImportRequest req) {
         return importService.importProduct(req);
+    }
+
+    // Import history
+    @GetMapping("/imports")
+    public List<StockImport> getImportHistory() {
+        return importService.getAllImports();
     }
 }

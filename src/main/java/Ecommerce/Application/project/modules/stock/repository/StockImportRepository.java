@@ -1,7 +1,7 @@
 package Ecommerce.Application.project.modules.stock.repository;
 
-import Ecommerce.Application.project.modules.stock.entity.ProductImport;
+import Ecommerce.Application.project.modules.stock.entity.StockImport;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface ProductImportRepository extends JpaRepository<ProductImport, Long> {
+public interface StockImportRepository extends JpaRepository<StockImport, Long> {
 }

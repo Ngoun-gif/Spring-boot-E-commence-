@@ -15,19 +15,26 @@ public class AuthController {
         this.service = service;
     }
 
-    // -----------------------------
-    // POST /api/auth/register
-    // -----------------------------
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         return ResponseHandler.success("Registration successful", service.register(request));
     }
 
-    // -----------------------------
-    // POST /api/auth/login
-    // -----------------------------
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
         return ResponseHandler.success("Login successful", service.login(request));
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest request) {
+        return ResponseHandler.success("New token generated", service.refresh(request));
+    }
+
+    // Logout handled on frontend ONLY
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        return ResponseHandler.success("Logout successful", null);
+    }
+
+
 }

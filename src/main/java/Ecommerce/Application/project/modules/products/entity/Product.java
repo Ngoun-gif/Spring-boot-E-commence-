@@ -24,12 +24,11 @@ public class Product {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    private String image;
+
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
-    private String image;
 
-    private Double rating;      // rate
-    private Integer ratingCount; // count
 }

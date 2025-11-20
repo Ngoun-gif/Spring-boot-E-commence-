@@ -12,6 +12,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.CorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -27,49 +32,91 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.disable()) // disable default, use custom CorsFilter
+                .cors(cors -> {})
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
                 .authorizeHttpRequests(req -> req
 
-                        // Public authentication endpoints
+                        // ===========================
+                        // PUBLIC ROUTES
+                        // ===========================
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
 
-                        // Swagger UI (must be public)
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**"
-                        ).permitAll()
+                        // Image upload + static files
+                        .requestMatchers(HttpMethod.POST, "/api/files/upload").permitAll()
+                        .requestMatchers("/api/files/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
 
-                        // Let Swagger READ users endpoints (only GET)
-                        .requestMatchers(HttpMethod.GET, "/users/**").permitAll()
-                        // Real protected users API
-                        .requestMatchers("/users/**").authenticated()
-                        // Roles API requires ADMIN
-                        .requestMatchers("/roles/**").hasAuthority("ADMIN")
-                        // Public read
+                        // ===========================
+                        // CATEGORY
+                        // ===========================
                         .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
-                        // Admin only for create/update/delete
                         .requestMatchers(HttpMethod.POST, "/categories/**").hasAuthority("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/categories/**").hasAuthority("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/categories/**").hasAuthority("ADMIN")
 
-                        // Public read
+                        // ===========================
+                        // PRODUCT
+                        // ===========================
                         .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
-                        // Admin only for create/update/delete
                         .requestMatchers(HttpMethod.POST, "/products/**").hasAuthority("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/products/**").hasAuthority("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/products/**").hasAuthority("ADMIN")
 
+                        // ===========================
+                        // STOCK
+                        // ===========================
+                        .requestMatchers(HttpMethod.GET, "/stock").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/stock/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/stock/set").hasAuthority("ADMIN")
 
+                        // ===========================
+                        // STOCK IMPORT
+                        // ===========================
+                        // STOCK IMPORT (ADMIN ONLY)
+                        .requestMatchers(HttpMethod.POST, "/stock/import").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/stock/imports").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/product-imports").hasAuthority("ADMIN")
 
-                        // All other requests require JWT
+                        // ===========================
+                        // USER & ROLE
+                        // ===========================
+                        .requestMatchers("/users/**").hasAuthority("ADMIN")
+                        .requestMatchers("/roles/**").hasAuthority("ADMIN")
+
+                        // ===========================
+                        // ANY OTHER SECURED
+                        // ===========================
                         .anyRequest().authenticated()
                 );
 
+        // JWT filter
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+
+    // ===========================
+    // CORS CONFIG
+    // ===========================
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "http://localhost:5174",
+                "http://localhost:5175"
+        ));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("Authorization"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 
     @Bean

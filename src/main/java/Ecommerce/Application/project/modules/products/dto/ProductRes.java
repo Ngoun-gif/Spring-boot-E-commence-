@@ -11,8 +11,9 @@ public class ProductRes {
     private String title;
     private Double price;
     private String description;
-    private String category;  // category name
+    private String category;
     private String image;
-    private Double rating;
-    private Integer ratingCount;
+    private boolean outOfStock;
+    private int stockQuantity;
 }
+

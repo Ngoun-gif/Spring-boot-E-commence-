@@ -13,4 +13,8 @@ public class CartItemResponse {
     private Integer quantity;
     private BigDecimal price;
     private BigDecimal total;
+
+    private boolean outOfStock;
+    private int availableStock;
+
 }
