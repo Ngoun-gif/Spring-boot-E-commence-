@@ -3,12 +3,12 @@ package Ecommerce.Application.project.modules.cart.service;
 import Ecommerce.Application.project.modules.cart.dto.*;
 import Ecommerce.Application.project.modules.cart.entity.*;
 import Ecommerce.Application.project.modules.cart.repository.*;
-import Ecommerce.Application.project.modules.products.ProductRepository;
 import Ecommerce.Application.project.modules.products.entity.Product;
-import Ecommerce.Application.project.modules.stock.repository.StockRepository;
+import Ecommerce.Application.project.modules.products.ProductRepository;
 import Ecommerce.Application.project.modules.stock.entity.Stock;
-import Ecommerce.Application.project.modules.users.UserRepository;
+import Ecommerce.Application.project.modules.stock.repository.StockRepository;
 import Ecommerce.Application.project.modules.users.entity.User;
+import Ecommerce.Application.project.modules.users.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,20 +28,21 @@ public class CartService {
     private final StockRepository stockRepository;
 
     // -----------------------------------------------------
-    // FIND or CREATE cart
+    // GET OR CREATE CART
     // -----------------------------------------------------
     private Cart getOrCreateCart(User user) {
         return cartRepository.findByUser(user).orElseGet(() -> {
-            Cart cart = new Cart();
-            cart.setUser(user);
-            cart.setItems(new ArrayList<>());
-            cart.setTotalPrice(BigDecimal.ZERO);
+            Cart cart = Cart.builder()
+                    .user(user)
+                    .totalPrice(BigDecimal.ZERO)
+                    .items(new ArrayList<>())
+                    .build();
             return cartRepository.save(cart);
         });
     }
 
     // -----------------------------------------------------
-    // ADD ITEM TO CART
+    // ADD TO CART
     // -----------------------------------------------------
     public CartResponse addToCart(String userEmail, AddToCartRequest request) {
 
@@ -53,15 +54,19 @@ public class CartService {
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        // Check stock
         Stock stock = stockRepository.findByProduct(product)
-                .orElseThrow(() -> new RuntimeException("Stock not found"));
+                .orElseThrow(() -> new RuntimeException("Stock record missing"));
 
-        if (stock.getQuantity() < request.getQuantity()) {
-            throw new RuntimeException("Only " + stock.getQuantity() + " left in stock");
+        int qty = request.getQuantity();
+
+        if (qty <= 0) {
+            throw new RuntimeException("Quantity must be greater than 0");
         }
 
-        // Check if item already in cart
+        if (stock.getQuantity() < qty) {
+            throw new RuntimeException("Only " + stock.getQuantity() + " available");
+        }
+
         CartItem item = cartItemRepository.findByCartAndProduct(cart, product).orElse(null);
 
         if (item == null) {
@@ -69,21 +74,25 @@ public class CartService {
                     .cart(cart)
                     .product(product)
                     .price(product.getPrice())
-                    .quantity(request.getQuantity())
-                    .total(product.getPrice().multiply(
-                            BigDecimal.valueOf(request.getQuantity())
-                    ))
+                    .quantity(qty)
+                    .total(product.getPrice().multiply(BigDecimal.valueOf(qty)))
+                    .outOfStock(stock.getQuantity() < qty)
+                    .availableStock(stock.getQuantity())
                     .build();
 
             cart.getItems().add(item);
+
         } else {
-            int newQty = item.getQuantity() + request.getQuantity();
+            int newQty = item.getQuantity() + qty;
+
             if (newQty > stock.getQuantity()) {
                 throw new RuntimeException("Not enough stock");
             }
 
             item.setQuantity(newQty);
             item.setTotal(item.getPrice().multiply(BigDecimal.valueOf(newQty)));
+            item.setOutOfStock(stock.getQuantity() < newQty);
+            item.setAvailableStock(stock.getQuantity());
         }
 
         cartItemRepository.save(item);
@@ -92,9 +101,8 @@ public class CartService {
         return toResponse(cart);
     }
 
-
     // -----------------------------------------------------
-    // UPDATE ITEM QUANTITY
+    // UPDATE ITEM
     // -----------------------------------------------------
     public CartResponse updateItem(String userEmail, UpdateCartRequest request) {
 
@@ -107,13 +115,28 @@ public class CartService {
                 .orElseThrow(() -> new RuntimeException("Cart item not found"));
 
         if (!item.getCart().getId().equals(cart.getId())) {
-            throw new RuntimeException("Item does not belong to this cart");
+            throw new RuntimeException("Item does not belong to your cart");
         }
 
-        item.setQuantity(request.getQuantity());
-        item.setTotal(item.getPrice().multiply(BigDecimal.valueOf(request.getQuantity())));
-        cartItemRepository.save(item);
+        int newQty = request.getQuantity();
 
+        if (newQty <= 0) {
+            throw new RuntimeException("Quantity must be greater than 0");
+        }
+
+        Stock stock = stockRepository.findByProduct(item.getProduct())
+                .orElseThrow(() -> new RuntimeException("Stock not found"));
+
+        if (newQty > stock.getQuantity()) {
+            throw new RuntimeException("Only " + stock.getQuantity() + " available");
+        }
+
+        item.setQuantity(newQty);
+        item.setTotal(item.getPrice().multiply(BigDecimal.valueOf(newQty)));
+        item.setOutOfStock(stock.getQuantity() < newQty);
+        item.setAvailableStock(stock.getQuantity());
+
+        cartItemRepository.save(item);
         updateCartTotal(cart);
 
         return toResponse(cart);
@@ -133,7 +156,7 @@ public class CartService {
                 .orElseThrow(() -> new RuntimeException("Item not found"));
 
         if (!item.getCart().getId().equals(cart.getId())) {
-            throw new RuntimeException("Item does not belong to your cart");
+            throw new RuntimeException("Item does not belong to this cart");
         }
 
         cart.getItems().remove(item);
@@ -177,7 +200,7 @@ public class CartService {
     }
 
     // -----------------------------------------------------
-    // Recalculate total
+    // UPDATE TOTAL PRICE
     // -----------------------------------------------------
     private void updateCartTotal(Cart cart) {
         BigDecimal total = cart.getItems().stream()
@@ -189,7 +212,7 @@ public class CartService {
     }
 
     // -----------------------------------------------------
-    // Convert to DTO
+    // CONVERT TO DTO
     // -----------------------------------------------------
     private CartResponse toResponse(Cart cart) {
         return CartResponse.builder()
@@ -198,12 +221,9 @@ public class CartService {
                 .items(
                         cart.getItems().stream().map(item -> {
 
-                            // Get live stock for this product
-                            Stock stock = stockRepository.findByProduct(item.getProduct())
-                                    .orElse(null);
-
-                            boolean isOut = stock == null || stock.getQuantity() < item.getQuantity();
+                            Stock stock = stockRepository.findByProduct(item.getProduct()).orElse(null);
                             int available = stock != null ? stock.getQuantity() : 0;
+                            boolean isOut = available < item.getQuantity();
 
                             return CartItemResponse.builder()
                                     .id(item.getId())
@@ -219,6 +239,4 @@ public class CartService {
                 )
                 .build();
     }
-
-
 }

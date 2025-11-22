@@ -27,9 +27,15 @@ public class CartItem {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
+    @Column(nullable = false)
     private Integer quantity;
 
+    @Column(nullable = false)
     private BigDecimal price;
 
+    @Column(nullable = false)
     private BigDecimal total;
+
+    private boolean outOfStock;
+    private Integer availableStock;
 }
