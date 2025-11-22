@@ -1,4 +1,4 @@
-package Ecommerce.Application.project.modules.cart;
+package Ecommerce.Application.project.modules.cart.service;
 
 import Ecommerce.Application.project.modules.cart.dto.*;
 import Ecommerce.Application.project.modules.cart.entity.*;
