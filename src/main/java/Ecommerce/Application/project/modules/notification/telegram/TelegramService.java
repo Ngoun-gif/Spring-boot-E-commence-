@@ -17,14 +17,14 @@ public class TelegramService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public void sendMessage(String message) {
+    public void sendHtmlMessage(String message) {
         try {
-            // Replace newline with URL-encoded newline ONLY
+            // URL-encode newline
             String text = message.replace("\n", "%0A");
 
             String url = "https://api.telegram.org/bot" + botToken +
                     "/sendMessage?chat_id=" + chatId +
-                    "&parse_mode=Markdown" +
+                    "&parse_mode=HTML" +
                     "&text=" + text;
 
             restTemplate.getForEntity(url, String.class);

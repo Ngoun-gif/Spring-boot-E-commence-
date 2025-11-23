@@ -1,4 +1,4 @@
-package Ecommerce.Application.project.modules.order.entity;
+package Ecommerce.Application.project.modules.checkout.entity;
 
 import Ecommerce.Application.project.modules.products.entity.Product;
 import jakarta.persistence.*;

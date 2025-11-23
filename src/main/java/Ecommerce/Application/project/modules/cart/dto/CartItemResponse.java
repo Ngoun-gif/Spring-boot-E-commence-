@@ -10,11 +10,11 @@ public class CartItemResponse {
 
     private Long id;
     private Long productId;
+
     private Integer quantity;
     private BigDecimal price;
     private BigDecimal total;
 
     private boolean outOfStock;
     private Integer availableStock;
-
 }

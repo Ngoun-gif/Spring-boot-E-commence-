@@ -15,7 +15,10 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @PostMapping
-    public PaymentResponse createPayment(@RequestBody PaymentRequest req, Principal principal) {
+    public PaymentResponse create(
+            @RequestBody PaymentRequest req,
+            Principal principal
+    ) {
         return paymentService.pay(req, principal.getName());
     }
 }

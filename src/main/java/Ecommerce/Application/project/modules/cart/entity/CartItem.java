@@ -8,11 +8,8 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "cart_items", schema = "ecommerce")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor @Builder
 public class CartItem {
 
     @Id
@@ -30,12 +27,9 @@ public class CartItem {
     @Column(nullable = false)
     private Integer quantity;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal total;
-
-    private boolean outOfStock;
-    private Integer availableStock;
 }

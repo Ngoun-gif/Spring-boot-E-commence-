@@ -1,6 +1,6 @@
-package Ecommerce.Application.project.modules.order.repository;
+package Ecommerce.Application.project.modules.checkout.repository;
 
-import Ecommerce.Application.project.modules.order.entity.Order;
+import Ecommerce.Application.project.modules.checkout.entity.Order;
 import Ecommerce.Application.project.modules.users.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 

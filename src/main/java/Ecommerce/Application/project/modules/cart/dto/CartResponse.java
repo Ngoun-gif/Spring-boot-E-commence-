@@ -8,7 +8,6 @@ import java.util.List;
 @NoArgsConstructor @AllArgsConstructor
 @Builder
 public class CartResponse {
-
     private Long cartId;
     private BigDecimal totalPrice;
     private List<CartItemResponse> items;

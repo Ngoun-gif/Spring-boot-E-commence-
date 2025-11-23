@@ -6,5 +6,4 @@ import lombok.*;
 @NoArgsConstructor @AllArgsConstructor
 public class PaymentRequest {
     private Long orderId;
-    private String method; // CASH, CARD, QRCODE
 }

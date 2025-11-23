@@ -1,4 +1,4 @@
-package Ecommerce.Application.project.modules.order.dto;
+package Ecommerce.Application.project.modules.checkout.dto;
 
 import lombok.*;
 import java.math.BigDecimal;

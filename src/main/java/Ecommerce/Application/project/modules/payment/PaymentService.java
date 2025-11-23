@@ -1,14 +1,16 @@
 package Ecommerce.Application.project.modules.payment;
 
-import Ecommerce.Application.project.modules.notification.telegram.TelegramService;
-import Ecommerce.Application.project.modules.order.entity.Order;
-import Ecommerce.Application.project.modules.order.repository.OrderRepository;
+import Ecommerce.Application.project.modules.checkout.entity.Order;
+import Ecommerce.Application.project.modules.checkout.repository.OrderRepository;
 import Ecommerce.Application.project.modules.payment.dto.PaymentRequest;
 import Ecommerce.Application.project.modules.payment.dto.PaymentResponse;
 import Ecommerce.Application.project.modules.payment.entity.Payment;
+import Ecommerce.Application.project.modules.payment.enums.PaymentStatus;
 import Ecommerce.Application.project.modules.payment.repository.PaymentRepository;
+import Ecommerce.Application.project.modules.notification.telegram.TelegramService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -18,68 +20,68 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
+    private final TelegramService telegramService;
 
-    private final TelegramService telegramService;   // ✅ FIXED
-
+    @Transactional
     public PaymentResponse pay(PaymentRequest req, String email) {
 
+        // 1. Find order
         Order order = orderRepository.findById(req.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
+        // 2. Security: user must own order
         if (!order.getUser().getEmail().equals(email)) {
-            throw new RuntimeException("This order does not belong to you");
+            throw new RuntimeException("You cannot pay for another user's order");
         }
 
-        // Prevent duplicate payment
-        paymentRepository.findByOrder(order)
+        // 3. Prevent duplicate payments
+        paymentRepository.findByOrderId(order.getId())
                 .ifPresent(p -> {
                     throw new RuntimeException("Order already paid");
                 });
 
-        // Create payment
-        Payment payment = Payment.builder()
-                .order(order)
-                .amount(order.getTotalPrice())
-                .method(req.getMethod())
-                .status("PAID")
-                .transactionId(UUID.randomUUID().toString())
-                .build();
+        // 4. Create payment (NO BUILDER!)
+        Payment payment = new Payment();
+        payment.setOrder(order);
+        payment.setPaymentStatus(PaymentStatus.PAID);
+        payment.setTransactionId(UUID.randomUUID().toString());
 
         paymentRepository.save(payment);
 
-        // Update order
-        order.setStatus("PROCESSING");
+        // 5. Update order payment status
+        order.setPaymentStatus(PaymentStatus.PAID);
         orderRepository.save(order);
 
-        // =====================================
-        // SEND TELEGRAM NOTIFICATION (Pretty)
-        // =====================================
+        // 6. Telegram HTML notification
         String msg = """
-                📢 *New Payment Received!*
+                <b>💰 Payment Received!</b>
 
-                👤 *User:* `%s`
-                🧾 *Order ID:* `%d`
-                💰 *Amount:* *$%s*
-                💳 *Method:* `%s`
-                🔑 *Transaction:* `%s`
-                """
-                .formatted(
-                        order.getUser().getEmail(),
-                        order.getId(),
-                        payment.getAmount().toPlainString(),
-                        payment.getMethod(),
-                        payment.getTransactionId()
-                );
+                👤 <b>User:</b> <code>%s</code>
+                📦 <b>Order ID:</b> <code>%d</code>
+                💳 <b>Method:</b> <code>%s</code>
+                💵 <b>Total Amount:</b> <code>%s</code>
 
-        telegramService.sendMessage(msg);
+                🔐 <b>Transaction:</b>
+                <code>%s</code>
 
-        // Return response
+                🛠️ Backend: <b>Ecommerce System</b>
+                """.formatted(
+                order.getUser().getEmail(),
+                order.getId(),
+                order.getPaymentMethod(),
+                order.getTotalPrice().toPlainString(),
+                payment.getTransactionId()
+        );
+
+        telegramService.sendHtmlMessage(msg);
+
+        // 7. Return Payment response
         return PaymentResponse.builder()
                 .paymentId(payment.getId())
                 .orderId(order.getId())
-                .method(payment.getMethod())
-                .status(payment.getStatus())
+                .paymentStatus(payment.getPaymentStatus())
                 .transactionId(payment.getTransactionId())
+                .createdAt(payment.getCreatedAt())  // ADD THIS!
                 .build();
     }
 }

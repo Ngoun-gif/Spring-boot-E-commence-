@@ -1,12 +1,12 @@
-package Ecommerce.Application.project.modules.order;
+package Ecommerce.Application.project.modules.checkout;
 
 import Ecommerce.Application.project.modules.cart.entity.Cart;
 import Ecommerce.Application.project.modules.cart.entity.CartItem;
 import Ecommerce.Application.project.modules.cart.repository.CartRepository;
-import Ecommerce.Application.project.modules.order.dto.*;
-import Ecommerce.Application.project.modules.order.entity.*;
-import Ecommerce.Application.project.modules.order.repository.OrderItemRepository;
-import Ecommerce.Application.project.modules.order.repository.OrderRepository;
+import Ecommerce.Application.project.modules.checkout.dto.*;
+import Ecommerce.Application.project.modules.checkout.entity.*;
+import Ecommerce.Application.project.modules.checkout.repository.OrderItemRepository;
+import Ecommerce.Application.project.modules.checkout.repository.OrderRepository;
 import Ecommerce.Application.project.modules.stock.repository.StockRepository;
 import Ecommerce.Application.project.modules.stock.entity.Stock;
 import Ecommerce.Application.project.modules.users.UserRepository;

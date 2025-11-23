@@ -1,7 +1,7 @@
-package Ecommerce.Application.project.modules.order;
+package Ecommerce.Application.project.modules.checkout;
 
-import Ecommerce.Application.project.modules.order.dto.CheckoutRequest;
-import Ecommerce.Application.project.modules.order.dto.OrderResponse;
+import Ecommerce.Application.project.modules.checkout.dto.CheckoutRequest;
+import Ecommerce.Application.project.modules.checkout.dto.OrderResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -10,7 +10,7 @@ import java.security.Principal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping("/orders")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
 public class OrderController {
