@@ -42,6 +42,7 @@ public class SecurityConfig {
                         // STATIC FILES
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
 
+
                         // PUBLIC APIs
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
@@ -63,6 +64,9 @@ public class SecurityConfig {
 
                         .requestMatchers("/users/**").hasAuthority("ADMIN")
                         .requestMatchers("/roles/**").hasAuthority("ADMIN")
+
+                        .requestMatchers("/payment/**").authenticated()
+
 
                         .anyRequest().authenticated()
                 );

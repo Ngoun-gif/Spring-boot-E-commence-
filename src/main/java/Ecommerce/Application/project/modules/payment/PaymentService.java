@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -22,25 +23,24 @@ public class PaymentService {
     private final OrderRepository orderRepository;
     private final TelegramService telegramService;
 
+    // ==========================================
+    // 1. CREATE PAYMENT
+    // ==========================================
     @Transactional
     public PaymentResponse pay(PaymentRequest req, String email) {
 
-        // 1. Find order
         Order order = orderRepository.findById(req.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        // 2. Security: user must own order
         if (!order.getUser().getEmail().equals(email)) {
-            throw new RuntimeException("You cannot pay for another user's order");
+            throw new RuntimeException("This order does not belong to this user");
         }
 
-        // 3. Prevent duplicate payments
         paymentRepository.findByOrderId(order.getId())
                 .ifPresent(p -> {
                     throw new RuntimeException("Order already paid");
                 });
 
-        // 4. Create payment (NO BUILDER!)
         Payment payment = new Payment();
         payment.setOrder(order);
         payment.setPaymentStatus(PaymentStatus.PAID);
@@ -48,11 +48,72 @@ public class PaymentService {
 
         paymentRepository.save(payment);
 
-        // 5. Update order payment status
         order.setPaymentStatus(PaymentStatus.PAID);
         orderRepository.save(order);
 
-        // 6. Telegram HTML notification
+        sendTelegramPayment(order, payment);
+
+        return toResponse(payment);
+    }
+
+    // ==========================================
+    // 2. GET LAST PAYMENT
+    // ==========================================
+    public PaymentResponse getMyLatestPayment(String email) {
+        Payment payment = paymentRepository
+                .findTopByOrderUserEmailOrderByCreatedAtDesc(email)
+                .orElseThrow(() -> new RuntimeException("No payments found"));
+
+        return toResponse(payment);
+    }
+
+    // ==========================================
+    // 3. GET ALL PAYMENTS
+    // ==========================================
+    public List<PaymentResponse> getMyPayments(String email) {
+        return paymentRepository.findByOrderUserEmail(email)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    // ==========================================
+    // 4. GET PAYMENT FOR SPECIFIC ORDER
+    // ==========================================
+    public PaymentResponse getPaymentByOrder(Long orderId, String email) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // Security: user must own the order
+        if (!order.getUser().getEmail().equals(email)) {
+            throw new RuntimeException("Unauthorized");
+        }
+
+        Payment payment = paymentRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new RuntimeException("Payment not found"));
+
+        return toResponse(payment);
+    }
+
+    // ==========================================
+    // HELPER: Convert to DTO
+    // ==========================================
+    private PaymentResponse toResponse(Payment payment) {
+        return PaymentResponse.builder()
+                .paymentId(payment.getId())
+                .orderId(payment.getOrder().getId())
+                .paymentStatus(payment.getPaymentStatus())
+                .transactionId(payment.getTransactionId())
+                .createdAt(payment.getCreatedAt())
+                .build();
+    }
+
+    // ==========================================
+    // HELPER: Telegram Notification
+    // ==========================================
+    private void sendTelegramPayment(Order order, Payment payment) {
+
         String msg = """
                 <b>💰 Payment Received!</b>
 
@@ -65,23 +126,15 @@ public class PaymentService {
                 <code>%s</code>
 
                 🛠️ Backend: <b>Ecommerce System</b>
-                """.formatted(
-                order.getUser().getEmail(),
-                order.getId(),
-                order.getPaymentMethod(),
-                order.getTotalPrice().toPlainString(),
-                payment.getTransactionId()
-        );
+                """
+                .formatted(
+                        order.getUser().getEmail(),
+                        order.getId(),
+                        order.getPaymentMethod(),
+                        order.getTotalPrice().toPlainString(),
+                        payment.getTransactionId()
+                );
 
         telegramService.sendHtmlMessage(msg);
-
-        // 7. Return Payment response
-        return PaymentResponse.builder()
-                .paymentId(payment.getId())
-                .orderId(order.getId())
-                .paymentStatus(payment.getPaymentStatus())
-                .transactionId(payment.getTransactionId())
-                .createdAt(payment.getCreatedAt())  // ADD THIS!
-                .build();
     }
 }
