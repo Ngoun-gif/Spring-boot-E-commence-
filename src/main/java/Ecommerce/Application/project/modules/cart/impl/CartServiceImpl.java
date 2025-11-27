@@ -76,6 +76,15 @@ public class CartServiceImpl implements CartService {
     }
 
     // -------------------------------------------
+    // Helper: Validate cart ownership
+    // -------------------------------------------
+    private void validateCartOwnership(Cart cart, String userEmail) {
+        if (!cart.getUser().getEmail().equals(userEmail)) {
+            throw new RuntimeException("Access denied: You don't own this cart");
+        }
+    }
+
+    // -------------------------------------------
     // ADD TO CART
     // -------------------------------------------
     @Override
@@ -140,6 +149,8 @@ public class CartServiceImpl implements CartService {
         if (!item.getCart().getId().equals(cart.getId()))
             throw new RuntimeException("Item does not belong to your cart");
 
+        validateCartOwnership(cart, email);
+
         int newQty = request.getQuantity();
         if (newQty <= 0)
             throw new RuntimeException("Quantity must be greater than 0");
@@ -172,6 +183,8 @@ public class CartServiceImpl implements CartService {
         if (!item.getCart().getId().equals(cart.getId()))
             throw new RuntimeException("Item does not belong to cart");
 
+        validateCartOwnership(cart, email);
+
         cart.getItems().remove(item);
         cartItemRepository.delete(item);
 
@@ -189,6 +202,8 @@ public class CartServiceImpl implements CartService {
         User user = findUser(email);
         Cart cart = getOrCreateCart(user);
 
+        validateCartOwnership(cart, email);
+
         cartItemRepository.deleteAll(cart.getItems());
         cart.getItems().clear();
         cart.setTotalPrice(BigDecimal.ZERO);
@@ -205,6 +220,8 @@ public class CartServiceImpl implements CartService {
 
         User user = findUser(email);
         Cart cart = getOrCreateCart(user);
+
+        validateCartOwnership(cart, email);
 
         return toResponse(cart);
     }
@@ -250,6 +267,8 @@ public class CartServiceImpl implements CartService {
             throw new RuntimeException("Item does not belong to your cart");
         }
 
+        validateCartOwnership(cart, email);
+
         int newQty = item.getQuantity() + 1;
         int stock = getStock(item.getProduct());
 
@@ -278,6 +297,8 @@ public class CartServiceImpl implements CartService {
             throw new RuntimeException("Item does not belong to your cart");
         }
 
+        validateCartOwnership(cart, email);
+
         int newQty = item.getQuantity() - 1;
 
         // If quantity becomes 0 → remove item
@@ -295,6 +316,4 @@ public class CartServiceImpl implements CartService {
         updateTotal(cart);
         return toResponse(cart);
     }
-
-
 }

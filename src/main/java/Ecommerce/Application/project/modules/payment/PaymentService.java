@@ -29,30 +29,36 @@ public class PaymentService {
     @Transactional
     public PaymentResponse pay(PaymentRequest req, String email) {
 
+        // 🔐 find order
         Order order = orderRepository.findById(req.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
+        // 🔐 user must own the order
         if (!order.getUser().getEmail().equals(email)) {
-            throw new RuntimeException("This order does not belong to this user");
+            throw new RuntimeException("This order does not belong to the current user");
         }
 
+        // stop double payment
         paymentRepository.findByOrderId(order.getId())
                 .ifPresent(p -> {
                     throw new RuntimeException("Order already paid");
                 });
 
+        // create payment
         Payment payment = new Payment();
         payment.setOrder(order);
         payment.setPaymentStatus(PaymentStatus.PAID);
         payment.setTransactionId(UUID.randomUUID().toString());
-
         paymentRepository.save(payment);
 
+        // update order
         order.setPaymentStatus(PaymentStatus.PAID);
         orderRepository.save(order);
 
+        // notify telegram
         sendTelegramPayment(order, payment);
 
+        // return DTO
         return toResponse(payment);
     }
 
@@ -78,14 +84,14 @@ public class PaymentService {
     }
 
     // ==========================================
-    // 4. GET PAYMENT FOR SPECIFIC ORDER
+    // 4. GET PAYMENT BY ORDER
     // ==========================================
     public PaymentResponse getPaymentByOrder(Long orderId, String email) {
 
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        // Security: user must own the order
+        // user must own the order
         if (!order.getUser().getEmail().equals(email)) {
             throw new RuntimeException("Unauthorized");
         }
@@ -97,20 +103,21 @@ public class PaymentService {
     }
 
     // ==========================================
-    // HELPER: Convert to DTO
+    // 5. MAP ENTITY → DTO
     // ==========================================
     private PaymentResponse toResponse(Payment payment) {
         return PaymentResponse.builder()
                 .paymentId(payment.getId())
                 .orderId(payment.getOrder().getId())
                 .paymentStatus(payment.getPaymentStatus())
+                .totalPrice(payment.getOrder().getTotalPrice())  // ✅ FIX
                 .transactionId(payment.getTransactionId())
                 .createdAt(payment.getCreatedAt())
                 .build();
     }
 
     // ==========================================
-    // HELPER: Telegram Notification
+    // TELEGRAM MESSAGE
     // ==========================================
     private void sendTelegramPayment(Order order, Payment payment) {
 

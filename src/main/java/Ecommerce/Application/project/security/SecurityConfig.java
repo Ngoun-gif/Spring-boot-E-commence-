@@ -39,11 +39,15 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(req -> req
 
-                        // STATIC FILES
+                        // ============================
+                        // STATIC file access
+                        // ============================
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
 
 
-                        // PUBLIC APIs
+                        // ============================
+                        // PUBLIC endpoints (no login)
+                        // ============================
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
 
@@ -53,7 +57,20 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/files/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/files/upload").permitAll()
 
-                        // ADMIN API
+
+                        // ==========================================
+                        // USER-LEVEL (MUST BE LOGGED IN)
+                        // ==========================================
+                        .requestMatchers("/users/me").authenticated()
+                        .requestMatchers("/cart/**").authenticated()
+                        .requestMatchers("/wishlist/**").authenticated()
+                        .requestMatchers("/payment/**").authenticated()
+                        .requestMatchers("/orders/**").authenticated()
+
+
+                        // ==========================================
+                        // ADMIN ONLY
+                        // ==========================================
                         .requestMatchers(HttpMethod.POST, "/categories/**").hasAuthority("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/categories/**").hasAuthority("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/categories/**").hasAuthority("ADMIN")
@@ -62,12 +79,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/products/**").hasAuthority("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/products/**").hasAuthority("ADMIN")
 
+                        // Manage users list, roles, etc
                         .requestMatchers("/users/**").hasAuthority("ADMIN")
                         .requestMatchers("/roles/**").hasAuthority("ADMIN")
 
-                        .requestMatchers("/payment/**").authenticated()
 
-
+                        // everything else must log in
                         .anyRequest().authenticated()
                 );
 
@@ -81,7 +98,7 @@ public class SecurityConfig {
 
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOriginPatterns(List.of("*")); // mobile + web
+        config.setAllowedOriginPatterns(List.of("*")); // web + mobile
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
