@@ -25,10 +25,10 @@ public class User {
     @Column(nullable = false, length = 255)
     private String password;
 
-    @Column(nullable = false, length = 80)
+    @Column(nullable = true, length = 80)
     private String firstname;
 
-    @Column(nullable = false, length = 80)
+    @Column(nullable = true, length = 80)
     private String lastname;
 
     @Column(length = 50)

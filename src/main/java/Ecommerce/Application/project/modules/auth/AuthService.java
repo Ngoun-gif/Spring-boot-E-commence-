@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,12 +36,16 @@ public class AuthService {
     }
 
     // ---------------------------------------------------------
-    // REGISTER
+    // REGISTER USER
     // ---------------------------------------------------------
-    public UserRes register(RegisterRequest req) {
+    public AuthResponse register(RegisterRequest req) {
 
         if (userRepo.existsByEmail(req.getEmail())) {
             throw new RuntimeException("Email already exists!");
+        }
+
+        if (userRepo.existsByUsername(req.getUsername())) {
+            throw new RuntimeException("Username already exists!");
         }
 
         Role defaultRole = roleRepo.findByName("CUSTOMER")
@@ -48,18 +53,25 @@ public class AuthService {
 
         User user = new User();
         user.setEmail(req.getEmail());
-        user.setPassword(passwordEncoder.encode(req.getPassword()));
         user.setUsername(req.getUsername());
-        user.setFirstname(req.getFirstname());
-        user.setLastname(req.getLastname());
-        user.setPhone(req.getPhone());
+        user.setPassword(passwordEncoder.encode(req.getPassword()));
+
+        // Optional fields (null allowed in DB)
+        user.setFirstname(Objects.requireNonNullElse(req.getFirstname(), ""));
+        user.setLastname(Objects.requireNonNullElse(req.getLastname(), ""));
+        user.setPhone(Objects.requireNonNullElse(req.getPhone(), ""));
+
         user.setActive(true);
         user.setCreatedAt(Instant.now());
         user.setRoles(Set.of(defaultRole));
 
         userRepo.save(user);
 
-        return toUserRes(user);
+        // === ISSUE TOKENS ===
+        String access = jwtUtils.generateAccessToken(user.getEmail());
+        String refresh = jwtUtils.generateRefreshToken(user.getEmail());
+
+        return new AuthResponse(access, refresh, toUserRes(user));
     }
 
     // ---------------------------------------------------------
@@ -80,6 +92,9 @@ public class AuthService {
         return new AuthResponse(access, refresh, toUserRes(user));
     }
 
+    // ---------------------------------------------------------
+    // REFRESH TOKEN
+    // ---------------------------------------------------------
     public AuthResponse refresh(RefreshTokenRequest req) {
 
         if (!jwtUtils.validate(req.getRefreshToken())) {
@@ -91,17 +106,15 @@ public class AuthService {
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Generate new pair
-        String newAccess = jwtUtils.generateAccessToken(email);
-        String newRefresh = jwtUtils.generateRefreshToken(email);
-
-        return new AuthResponse(newAccess, newRefresh, toUserRes(user));
+        return new AuthResponse(
+                jwtUtils.generateAccessToken(email),
+                jwtUtils.generateRefreshToken(email),
+                toUserRes(user)
+        );
     }
 
-
-
     // ---------------------------------------------------------
-    // Mapper to UserRes
+    // Mapper
     // ---------------------------------------------------------
     private UserRes toUserRes(User u) {
         UserRes res = new UserRes();

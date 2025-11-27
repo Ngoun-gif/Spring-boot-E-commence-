@@ -30,11 +30,9 @@ public class AuthController {
         return ResponseHandler.success("New token generated", service.refresh(request));
     }
 
-    // Logout handled on frontend ONLY
     @PostMapping("/logout")
     public ResponseEntity<?> logout() {
         return ResponseHandler.success("Logout successful", null);
     }
-
-
 }
+
